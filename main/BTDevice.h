@@ -35,6 +35,7 @@
 
 
 void initBT();
-bool verifParite();
+bool verifParite(uint8_t* data, uint8_t length);
 bool calculParite(uint8_t* data, uint8_t length);
+uint8_t calculSequences(uint16_t distance);
 #endif

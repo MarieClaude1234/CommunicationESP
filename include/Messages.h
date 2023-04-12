@@ -13,6 +13,7 @@
 #define LENGTH_OPENCR_ESP 2
 #define LENGTH_ESP_GUI 9
 #define LENGTH_GUI_ESP 9
+#define CONVERSION_DIST_SEQ 80 // en mm
 
 struct MessageESP_OPENCR{
     bool mode; //manuel ou automatique
