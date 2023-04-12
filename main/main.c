@@ -11,6 +11,7 @@
 // #include "../include/BluetoothDevice.h"
 #include "../include/Messages.h"
 #include "BTDevice.h"
+#include "UartDevice.h"
 
 SemaphoreHandle_t mutexUART_BT;
 SemaphoreHandle_t mutexBT_UART;
@@ -31,6 +32,6 @@ void app_main() {
     queueBT_UART = xQueueCreate(8, sizeof(struct MessageESP_OPENCR));
     queueUART_BT = xQueueCreate(8, sizeof(struct MessageESP_GUI));
 
-    //initBT(queueBT_UART, queueUART_BT, mutexBT_UART, mutexUART_BT);
+    init_uart();
     initBT();
 }
