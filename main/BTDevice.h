@@ -31,6 +31,10 @@
 #define EXAMPLE_DEVICE_NAME "ESP_SPP_ACCEPTOR"
 #define SPP_SHOW_DATA 0
 #define SPP_SHOW_SPEED 1
+#define RECEPTION_TAG "SPP_RECEPTION"
+
 
 void initBT();
+bool verifParite();
+bool calculParite(uint8_t* data, uint8_t length);
 #endif

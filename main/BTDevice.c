@@ -1,20 +1,50 @@
 
 #include "BTDevice.h"
+bool verifParite();
+
+bool calculParite(uint8_t* data, uint8_t length){
+    int total = 0;
+    for(int i = 0; i < length; i++){
+        total += data[i];
+    }
+    ESP_LOGI(RECEPTION_TAG, "data : %d", data[0]);
+    if(total % 2 == 0)
+        return 0;
+    else
+        return 1;
+}
+
 void recevoirMessage(uint8_t* data, uint8_t length){
     
-    union MessageGUI_ESP recu;
-    recu.raw.frame = data;
-    recu.raw.length = length;
+    struct MessageGUI_ESP recu;
+    // recu.raw.frame = data;
+    // recu.raw.length = length;
+    recu.SOF = (data[0] & 0b11000000) >> 6;
+    recu.commande = data[0] & 0b00111111;
+    recu.addr_mac = (data[1] << 40) + (data[2] << 32) + (data[3] << 24) + (data[4] << 16) + (data[5] << 8) + (data[6]);
+    recu.distance = (data[7] << 8) + ((data[8] & 0b11110000)>>4);
+    recu.parite = ((data[8] & 0b00001000) >> 3);
+    recu.END = (data[8] & 0b0111);
 
-    union MessageESP_OPENCR transfert;
 
-    if((recu.donnees.commande) >= 13)
-        transfert.data.mode = MODE_AUTOMATIQUE;
+    struct MessageESP_OPENCR transfert;
+
+    if((recu.commande) >= 13)
+        transfert.mode = MODE_AUTOMATIQUE;
     else
-        transfert.data.mode = MODE_MANUEL;
+        transfert.mode = MODE_MANUEL;
 
-    transfert.data.commande = recu.donnees.commande;
+    transfert.commande = recu.commande;
 
+    transfert.parite = 0;
+
+    // uint8_t copy;
+    // memcpy(&copy, &transfert, sizeof(uint8_t));
+    // transfert.parite = calculParite(&copy, LENGTH_ESP_OPENCR);
+
+    // ESP_LOGI(RECEPTION_TAG, "raw : %X:%X:%X:%X:%X:%X:%X:%X:%X", recu.raw.frame[0], recu.raw.frame[1], recu.raw.frame[2], recu.raw.frame[3], recu.raw.frame[4], recu.raw.frame[5], recu.raw.frame[6], recu.raw.frame[7], recu.raw.frame[8]);
+    ESP_LOGI(RECEPTION_TAG, "SOF : %d, commande : %d, distance : %d, parite : %d, END: %d", recu.SOF, recu.commande, recu.distance, recu.parite, recu.END);
+    ESP_LOGI(RECEPTION_TAG, "mode : %d, commande : %d, parite : %d",transfert.mode, transfert.commande, transfert.parite);
 }
 
 // static const esp_spp_mode_t esp_spp_mode = ESP_SPP_MODE_CB;

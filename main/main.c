@@ -28,8 +28,8 @@ void app_main() {
     mutexBT_UART = xSemaphoreCreateMutex();
 
     // Initialise les files de messages
-    queueBT_UART = xQueueCreate(8, sizeof(union MessageESP_OPENCR));
-    queueUART_BT = xQueueCreate(8, sizeof(union MessageESP_GUI));
+    queueBT_UART = xQueueCreate(8, sizeof(struct MessageESP_OPENCR));
+    queueUART_BT = xQueueCreate(8, sizeof(struct MessageESP_GUI));
 
     //initBT(queueBT_UART, queueUART_BT, mutexBT_UART, mutexUART_BT);
     initBT();
