@@ -5,6 +5,43 @@
 ***/
 
 #include "BTDevice.h"
+
+uint32_t connectionHandle;
+
+void txBtTask(void * arg){
+    while(1){
+        struct MessageESP_GUI transfert;
+        bool nouvMessage = false;
+        
+        xSemaphoreTake(mutexUART_BT, (TickType_t) 25);
+        if(uxQueueMessagesWaiting(queueUART_BT) > 0){
+            xQueueReceive(queueUART_BT, &transfert, (TickType_t) 25);
+            nouvMessage = true;
+        }
+        xSemaphoreGive(mutexUART_BT);
+
+        if(nouvMessage){
+            uint8_t data[9];
+            data[0] = (transfert.SOF << 6) + (transfert.etape << 3) + transfert.electro1 + transfert.electro2 + transfert.electro3;
+            data[1] = transfert.addr_mac[0];
+            data[2] = transfert.addr_mac[1];
+            data[3] = transfert.addr_mac[2];
+            data[4] = transfert.addr_mac[3];
+            data[5] = transfert.addr_mac[4];
+            data[6] = transfert.addr_mac[5];
+            data[7] = (transfert.distance & 0x0FF0) >> 4;
+            data[8] = (transfert.distance & 0xF) + (transfert.parite << 3) + transfert.END;
+            
+            if(esp_spp_write(connectionHandle, 9, data) == ESP_SPP_SUCCESS)
+                ESP_LOGI(ENVOI_TAG, "Message sent -- SOF : %d, etape : %d, e1 : %d, e2 : %d, e3 : %d, distance : %d", transfert.SOF, transfert.etape, transfert.electro1, transfert.electro2, transfert.electro3, transfert.distance);
+            else
+                ESP_LOGE(ENVOI_TAG, "Sending error");
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+}
+
 bool verifParite(uint8_t* data, uint8_t length){
     int parite = 0;
     for(int i = 0; i < length; i++){
@@ -76,14 +113,18 @@ void recevoirMessage(uint8_t data[], uint8_t length){
         if(verifMAC(recu.addr_mac) == true){ // verifie que le message s'adresse bien a lui
             struct MessageESP_OPENCR transfert;
             
-            if((recu.commande) >= 13){ // mode auto
+            if((recu.commande) >= 15){ // mode auto
                 transfert.mode = MODE_AUTOMATIQUE;
-                if(recu.commande == 18){
+                if(recu.commande == 16){
                     transfert.commande = calculSequences(recu.distance);
                 }
-                else{
-                    transfert.commande = recu.commande;
+                else if(recu.commande == 17){
+                    transfert.commande = 0;
                 }
+                else if (recu.commande == 15)
+                {
+                    transfert.commande = 0b111111111111;
+                }  
             }
             else{ // mode manuel
                 transfert.mode = MODE_MANUEL;
@@ -156,6 +197,7 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
                      param->start.scn);
             esp_bt_dev_set_device_name(EXAMPLE_DEVICE_NAME);
             esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
+            connectionHandle = param->start.handle;
         } else {
             ESP_LOGE(SPP_TAG, "ESP_SPP_START_EVT status:%d", param->start.status);
         }

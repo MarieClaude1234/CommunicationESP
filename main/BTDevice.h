@@ -37,6 +37,7 @@
 #define SPP_SHOW_DATA 0
 #define SPP_SHOW_SPEED 1
 #define RECEPTION_TAG "SPP_RECEPTION"
+#define ENVOI_TAG "SPP_ENVOI"
 
 extern SemaphoreHandle_t mutexUART_BT;
 extern SemaphoreHandle_t mutexBT_UART;
@@ -48,4 +49,5 @@ bool verifParite(uint8_t* data, uint8_t length);
 bool calculParite(uint8_t* data, uint8_t length);
 uint8_t calculSequences(uint16_t distance);
 bool verifMAC(uint8_t adresse[6]);
+void txBtTask(void * arg);
 #endif

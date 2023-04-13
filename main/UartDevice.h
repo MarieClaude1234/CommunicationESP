@@ -38,7 +38,8 @@
 #define UART_TX_PIN (17)
 #define UART_RX_PIN (16)
 #define UART_PORT UART_NUM_2
-// #define SPP_SHOW_MODE SPP_SHOW_SPE
+
+#define UART_RX_TAG "UART RX"
 
 extern SemaphoreHandle_t mutexUART_BT;
 extern SemaphoreHandle_t mutexBT_UART;
@@ -54,7 +55,11 @@ extern QueueHandle_t queueUART_BT;
 
 void initUART();
 
-void txTask(void * arg);
-void rxTask(void * arg);
+bool verifParite2(uint8_t* data, uint8_t length);
+bool calculParite2(uint8_t data[], uint8_t length);
+uint16_t calculDistance(uint8_t sequences);
+
+void txUartTask(void * arg);
+void rxUartTask(void * arg);
 
 #endif

@@ -26,7 +26,7 @@ struct MessageESP_OPENCR{
 struct MessageOPENCR_ESP{
     bool SOF;
     bool mode;//manuel ou automatique
-    uint8_t commande; //commande effectuee ou nb de sequences faites
+    uint8_t commande : 6; //commande effectuee ou nb de sequences faites
     uint8_t etape : 3; //etape en cours
     bool electro1;
     bool electro2;
@@ -42,7 +42,7 @@ struct MessageESP_GUI{
     bool electro1;
     bool electro2;
     bool electro3;
-    uint64_t addr_mac : 48;
+    uint8_t addr_mac[6];
     uint16_t distance : 16; // distance parcourue
     bool parite;
     uint8_t END : 3;

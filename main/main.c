@@ -1,7 +1,7 @@
 /***
  * @author @MarieClaude1234
  * @file main.c
- * @date 22 janvier 2023
+ * @date 1 avril 2023
 ***/
 
 #include "freertos/FreeRTOS.h"
@@ -22,7 +22,6 @@ QueueHandle_t queueUART_BT;
 TaskHandle_t handleTX;
 
 void app_main() {
-    //xTaskCreatePinnedToCore(TaskFunction_t pxTaskCode, const char *const pcName, const configSTACK_DEPTH_TYPE usStackDepth, void *const pvParameters, UBaseType_t uxPriority, TaskHandle_t *const pvCreatedTask, const BaseType_t xCoreID);
     // Initialise les mutex
     mutexUART_BT = xSemaphoreCreateMutex();
     mutexBT_UART = xSemaphoreCreateMutex();
@@ -34,10 +33,7 @@ void app_main() {
     initUART();
     initBT();
 
-    xTaskCreate(txTask, "uart_send_data_task", UART_TX_STACK_SIZE, NULL, UART_TX_PRIORITY, NULL);
-    xTaskCreate(rxTask, "uart_receive_data_task", UART_RX_STACK_SIZE, NULL, UART_RX_PRIORITY, NULL);
-
-    // while(true){
-
-    // }
+    xTaskCreate(txUartTask, "uart_send_data_task", UART_TX_STACK_SIZE, NULL, UART_TX_PRIORITY, NULL);
+    xTaskCreate(rxUartTask, "uart_receive_data_task", UART_RX_STACK_SIZE, NULL, UART_RX_PRIORITY, NULL);
+    xTaskCreate(txBtTask, "bt_sende_data_task", 2048, NULL, 1, NULL);
 }

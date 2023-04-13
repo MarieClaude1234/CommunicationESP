@@ -25,7 +25,48 @@ void initUART(){
     ESP_ERROR_CHECK(uart_driver_install(UART_PORT, UART_RX_BUFF_SIZE, UART_TX_BUFF_SIZE, 0, NULL, 0));
 }
 
-void txTask(void * arg){
+bool verifParite2(uint8_t* data, uint8_t length){
+    int parite = 0;
+    for(int i = 0; i < length; i++){
+        parite += data[i] & 0b00000001;
+        parite += (data[i] & 0b00000010) >> 1;
+        parite += (data[i] & 0b00000100) >> 2;
+        parite += (data[i] & 0b00001000) >> 3;
+        parite += (data[i] & 0b00010000) >> 4;
+        parite += (data[i] & 0b00100000) >> 5;
+        parite += (data[i] & 0b01000000) >> 6;
+        parite += (data[i] & 0b10000000) >> 7;
+    }
+
+    return parite % 2;
+}
+
+bool calculParite2(uint8_t data[], uint8_t length){
+    int total = 0;
+    for(int i = 0; i < length; i++){
+        total += data[i] & 0b00000001;
+        total += (data[i] & 0b00000010) >> 1;
+        total += (data[i] & 0b00000100) >> 2;
+        total += (data[i] & 0b00001000) >> 3;
+        total += (data[i] & 0b00010000) >> 4;
+        total += (data[i] & 0b00100000) >> 5;
+        total += (data[i] & 0b01000000) >> 6;
+        total += (data[i] & 0b10000000) >> 7;
+    }
+    if(total % 2 == 0)
+        return 0;
+    else
+        return 1;
+}
+
+uint16_t calculDistance(uint8_t sequences){
+    uint16_t distance = sequences * CONVERSION_DIST_SEQ;
+
+    return distance;
+}
+
+
+void txUartTask(void * arg){
     // struct something_something* my_struct;
     // my_struct = (struct something_something*) arg;
 
@@ -51,24 +92,70 @@ void txTask(void * arg){
     }
 }
 
-void rxTask(void * arg){
-    struct concurrency_handler* handle;
-    handle = (struct concurrency_handler*) arg;
+void rxUartTask(void * arg){
     
-    static const char *RX_TASK_TAG = "RX_TASK";
-    esp_log_level_set(RX_TASK_TAG, ESP_LOG_INFO);
-
-    uint8_t data[UART_RX_BUFF_SIZE];
     while (1) {
-        int rx_bytes = uart_read_bytes(UART_PORT, data, UART_RX_BUFF_SIZE, pdMS_TO_TICKS(UART_RX_DELAY));
+        uint16_t data;
+
+        int rx_bytes = uart_read_bytes(UART_PORT, &data, sizeof(uint16_t), pdMS_TO_TICKS(UART_RX_DELAY));
         if (rx_bytes > 0) {
-            //printf("Received %d bytes: ", rx_bytes);
-            for (int i = 0; i < rx_bytes; i++)
-            {
-                //printf("%02X ", data[i]);
+            uint8_t data2[2] = {(data & 0xFF00)>>8, data & 0xFF};
+            if(verifParite2(data2, 2) == 1)
+                ESP_LOGE(UART_RX_TAG, "Reception error -- parity");
+            else{
+                struct MessageOPENCR_ESP recu;
+                recu.SOF = (data & 0b1000000000000000) >> 15;
+                recu.mode = (data & 0b0100000000000000) >> 14;
+                recu.commande = (data & 0b0011111100000000) >> 8;
+                recu.etape = (data & 0b0000000011100000) >> 5;
+                recu.electro1 = (data & 0b0000000000010000) >> 4;
+                recu.electro2 = (data & 0b0000000000001000) >> 3;
+                recu.electro3 = (data & 0b0000000000000100) >> 2;
+                recu.parite = (data & 0b0000000000000010) >> 1;
+                recu.END = data & 0b0000000000000001;
+                
+                ESP_LOGI(UART_RX_TAG, "SOF : %d, Mode : %d, Commande : %d, Etape : %d, E1 : %d, E2 : %d, E3 : %d, parite : %d, END : %d", 
+                    recu.SOF, recu.mode, recu.commande, recu.etape, recu.electro1, recu.electro2, recu.electro3, recu.parite, recu.END);
+            
+                struct MessageESP_GUI transfert;
+                transfert.SOF = 3;
+                transfert.etape = recu.etape;
+                transfert.electro1 = recu.electro1;
+                transfert.electro2 = recu.electro2;
+                transfert.electro3 = recu.electro3;
+                // adresse mac
+                long long int masque = 0xFF0000000000;
+                for(int i = 0;  i < 6; i++){
+                    transfert.addr_mac[i] = (ADRESSE_MAC & masque) >> (8*(6 - i - 1));
+                    masque = masque >> 8;
+                }
+                // distance
+                if(recu.mode == MODE_AUTOMATIQUE) 
+                    transfert.distance = calculDistance(recu.commande);
+                else
+                    transfert.distance = 0;
+                // end
+                transfert.parite = 0;
+                transfert.END = 5;
+                // parite
+                uint8_t copy[9];
+                copy[0] = (transfert.SOF << 6) + (transfert.etape << 3) + transfert.electro1 + transfert.electro2 + transfert.electro3;
+                copy[1] = transfert.addr_mac[0];
+                copy[2] = transfert.addr_mac[1];
+                copy[3] = transfert.addr_mac[2];
+                copy[4] = transfert.addr_mac[3];
+                copy[5] = transfert.addr_mac[4];
+                copy[6] = transfert.addr_mac[5];
+                copy[7] = (transfert.distance & 0x0FF0) >> 4;
+                copy[8] = (transfert.distance & 0xF) + (transfert.parite << 3) + transfert.END;
+                transfert.parite = calculParite2(&copy, LENGTH_ESP_GUI);
+                            
+                xSemaphoreTake(mutexUART_BT, (TickType_t) 25);
+                xQueueSend(queueUART_BT, &transfert, (TickType_t) 25);
+                xSemaphoreGive(mutexUART_BT);
+
+                vTaskDelay(pdMS_TO_TICKS(UART_TX_DELAY));
             }
-            //printf("\n");
-            ESP_LOGI(RX_TASK_TAG, "Read %d bytes: %u", rx_bytes, data[0]);
         }
     }
 }
