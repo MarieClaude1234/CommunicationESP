@@ -14,6 +14,7 @@
 #define LENGTH_ESP_GUI 9
 #define LENGTH_GUI_ESP 9
 #define CONVERSION_DIST_SEQ 80 // en mm
+#define ADRESSE_MAC 0x807d3ab933e2
 
 struct MessageESP_OPENCR{
     bool mode; //manuel ou automatique
@@ -51,7 +52,7 @@ struct MessageESP_GUI{
 struct MessageGUI_ESP{
     uint8_t SOF : 2;
     uint8_t commande : 6; // commande a effectuer ou nombre de sequences
-    uint64_t addr_mac : 48;
+    uint8_t addr_mac[6];
     uint16_t distance : 12; // distance parcourue
     bool parite;
     uint8_t END : 3;

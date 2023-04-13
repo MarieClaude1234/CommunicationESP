@@ -40,40 +40,58 @@ uint8_t calculSequences(uint16_t distance){
     return sequences;
 }
 
-void recevoirMessage(uint8_t* data, uint8_t length){
-    if(verifParite(data, length) == 1){
+bool verifMAC(uint8_t adresse[6]){
+    long long int masque = 0xFF0000000000;
+
+    for(int i = 0;  i < 6; i++){
+        if(adresse[i] != (ADRESSE_MAC & masque) >> (8*(6 - i - 1))){
+            ESP_LOGE(RECEPTION_TAG, "octet recu : %X, octet attendu : %X, masque : %llX", adresse[i], (ADRESSE_MAC & masque) >> (8*(6 - i - 1)), masque);
+            return false;
+        }
+        masque = masque >> 8;
+    }
+    return true;
+
+}
+
+void recevoirMessage(uint8_t data[], uint8_t length){
+    if(verifParite(data, length) == 1){ // verifie que la parite est bonne
         ESP_LOGE(RECEPTION_TAG, "Reception error -- parity");
     }
     else{
         struct MessageGUI_ESP recu;
         recu.SOF = (data[0] & 0b11000000) >> 6;
         recu.commande = data[0] & 0b00111111;
-        recu.addr_mac = (data[1] << 40) + (data[2] << 32) + (data[3] << 24) + (data[4] << 16) + (data[5] << 8) + (data[6]);
-        recu.distance = (data[7] << 8) + ((data[8] & 0b11110000)>>4);
+        memcpy(recu.addr_mac, &data[1], 6*sizeof(uint8_t));
+        recu.distance = (data[7] << 4) + ((data[8] & 0b11110000)>>4);
         recu.parite = ((data[8] & 0b00001000) >> 3);
         recu.END = (data[8] & 0b0111);
-        ESP_LOGI(RECEPTION_TAG, "SOF : %d, commande : %d, distance : %d, parite : %d, END: %d", recu.SOF, recu.commande, recu.distance, recu.parite, recu.END);
+        ESP_LOGI(RECEPTION_TAG, "SOF : %d, commande : %d, MAC : %X:%X:%X:%X:%X:%X, distance : %d, parite : %d, END: %d", recu.SOF, recu.commande, recu.addr_mac[0], recu.addr_mac[1], recu.addr_mac[2], recu.addr_mac[3], recu.addr_mac[4], recu.addr_mac[5], recu.distance, recu.parite, recu.END);
 
-        struct MessageESP_OPENCR transfert;
-        if((recu.commande) >= 13){
-            transfert.mode = MODE_AUTOMATIQUE;
-            if(recu.commande == 18){
-                transfert.commande = calculSequences(recu.distance);
+        if(verifMAC(recu.addr_mac) == true){ // verifie que le message s'adresse bien a lui
+            struct MessageESP_OPENCR transfert;
+            
+            if((recu.commande) >= 13){ // mode auto
+                transfert.mode = MODE_AUTOMATIQUE;
+                if(recu.commande == 18){
+                    transfert.commande = calculSequences(recu.distance);
+                }
+                else{
+                    transfert.commande = recu.commande;
+                }
             }
+            else{ // mode manuel
+                transfert.mode = MODE_MANUEL;
+                transfert.commande = recu.commande;
+            }
+            transfert.parite = 0;
 
+            uint8_t copy[1];
+            copy[0] = (transfert.mode << 7) + (transfert.commande << 1) + transfert.parite;
+            transfert.parite = calculParite(&copy, LENGTH_ESP_OPENCR);
+
+            ESP_LOGI(RECEPTION_TAG, "mode : %d, commande : %d, parite : %d",transfert.mode, transfert.commande, transfert.parite);
         }
-        else{
-            transfert.mode = MODE_MANUEL;
-            transfert.commande = recu.commande;
-        }
-        transfert.parite = 0;
-
-        uint8_t copy[1];
-        copy[0] = (transfert.mode << 7) + (transfert.commande << 1) + transfert.parite;
-        transfert.parite = calculParite(&copy, LENGTH_ESP_OPENCR);
-
-        ESP_LOGI(RECEPTION_TAG, "mode : %d, commande : %d, parite : %d",transfert.mode, transfert.commande, transfert.parite);
-
     }
 }
 
@@ -101,6 +119,7 @@ static char*bda2str(uint8_t * bda, char *str, size_t size)
 static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
 {
     char bda_str[18] = {0};
+    uint8_t raw[9];
 
     switch (event) {
     case ESP_SPP_INIT_EVT:
@@ -136,6 +155,7 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
         break;
     case ESP_SPP_DATA_IND_EVT:
 
+        // memcpy(&raw, param->data_ind.data, param->data_ind.len);
         recevoirMessage(param->data_ind.data, param->data_ind.len);
 #if (SPP_SHOW_MODE == SPP_SHOW_DATA)
         /*

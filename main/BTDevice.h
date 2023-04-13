@@ -38,4 +38,5 @@ void initBT();
 bool verifParite(uint8_t* data, uint8_t length);
 bool calculParite(uint8_t* data, uint8_t length);
 uint8_t calculSequences(uint16_t distance);
+bool verifMAC(uint8_t adresse[6]);
 #endif
