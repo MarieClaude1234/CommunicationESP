@@ -1,3 +1,8 @@
+/***
+ * @author @MarieClaude1234
+ * @file Utilities.h
+ * @date 28 mars 2023
+***/
 
 #ifndef BTDEVICE
 #define BTDEVICE
@@ -17,7 +22,6 @@
 #include "esp_gap_bt_api.h"
 #include "esp_bt_device.h"
 #include "esp_spp_api.h"
-
 #include "time.h"
 #include "sys/time.h"
 
@@ -25,6 +29,7 @@
 #include "freertos/semphr.h"
 
 #include "../include/Messages.h"
+// #include "../include/Utilities.h"
 
 #define SPP_TAG "SPP_ACCEPTOR_DEMO"
 #define SPP_SERVER_NAME "SPP_SERVER"
@@ -33,6 +38,10 @@
 #define SPP_SHOW_SPEED 1
 #define RECEPTION_TAG "SPP_RECEPTION"
 
+extern SemaphoreHandle_t mutexUART_BT;
+extern SemaphoreHandle_t mutexBT_UART;
+extern QueueHandle_t queueBT_UART;
+extern QueueHandle_t queueUART_BT;
 
 void initBT();
 bool verifParite(uint8_t* data, uint8_t length);

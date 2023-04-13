@@ -25,6 +25,7 @@
 
 #include "../include/Messages.h"
 
+
 #define UART_BAUD_RATE 9600
 #define UART_TX_BUFF_SIZE 256
 #define UART_RX_BUFF_SIZE 256
@@ -39,16 +40,21 @@
 #define UART_PORT UART_NUM_2
 // #define SPP_SHOW_MODE SPP_SHOW_SPE
 
-struct concurrency_handle{
-    QueueHandle_t queueBT_UART;
-    QueueHandle_t queueUART_BT;
-    SemaphoreHandle_t mutexUART_BT;
-    SemaphoreHandle_t mutexBT_UART;
-};
+extern SemaphoreHandle_t mutexUART_BT;
+extern SemaphoreHandle_t mutexBT_UART;
+extern QueueHandle_t queueBT_UART;
+extern QueueHandle_t queueUART_BT;
 
-void init_uart();
+// struct concurrency_handle{
+//     QueueHandle_t queueBT_UART;
+//     QueueHandle_t queueUART_BT;
+//     SemaphoreHandle_t mutexUART_BT;
+//     SemaphoreHandle_t mutexBT_UART;
+// };
 
-static void tx_task(void * arg);
-static void rx_task(void * arg);
+void initUART();
+
+void txTask(void * arg);
+void rxTask(void * arg);
 
 #endif

@@ -6,9 +6,9 @@
 
 #include "UartDevice.h"
 
+#define UART_TAG "UART_TAG"
 
-
-void init_uart(){    
+void initUART(){    
     uart_config_t uart_config = {
         .baud_rate = UART_BAUD_RATE,
         .data_bits = UART_DATA_8_BITS,
@@ -25,19 +25,33 @@ void init_uart(){
     ESP_ERROR_CHECK(uart_driver_install(UART_PORT, UART_RX_BUFF_SIZE, UART_TX_BUFF_SIZE, 0, NULL, 0));
 }
 
-static void tx_task(void * arg){
-    struct something_something* my_struct;
-    my_struct = (struct something_something*) arg;
+void txTask(void * arg){
+    // struct something_something* my_struct;
+    // my_struct = (struct something_something*) arg;
 
-    uint8_t tx_data = 4;
+
     while (1) {
-        //uart_write_bytes(UART_PORT, tx_data, strlen(tx_data));
-        uart_write_bytes(UART_PORT, &tx_data, sizeof(tx_data));
+        struct MessageESP_OPENCR transfert = {0,0,0};
+        bool nouvMessage = false;
+        
+        xSemaphoreTake(mutexBT_UART, (TickType_t) 25);
+        if(uxQueueMessagesWaiting(queueBT_UART) > 0){
+            xQueueReceive(queueBT_UART, &transfert, (TickType_t) 25);
+            nouvMessage = true;
+        }
+        xSemaphoreGive(mutexBT_UART);
+
+        if(nouvMessage){
+            uint8_t tx_data = (transfert.mode << 7) + (transfert.commande << 1) + transfert.parite;
+            ESP_LOGI(UART_TAG, "mode : %d, commande : %d, parite : %d, tx_data : %d", transfert.mode, transfert.commande, transfert.parite);
+            uart_write_bytes(UART_PORT, &tx_data, sizeof(tx_data));
+        }
+
         vTaskDelay(pdMS_TO_TICKS(UART_TX_DELAY));
     }
 }
 
-static void rx_task(void * arg){
+void rxTask(void * arg){
     struct concurrency_handler* handle;
     handle = (struct concurrency_handler*) arg;
     

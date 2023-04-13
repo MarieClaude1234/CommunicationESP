@@ -1,3 +1,8 @@
+/***
+ * @author @MarieClaude1234
+ * @file Utilities.h
+ * @date 28 mars 2023
+***/
 
 #include "BTDevice.h"
 bool verifParite(uint8_t* data, uint8_t length){
@@ -90,7 +95,12 @@ void recevoirMessage(uint8_t data[], uint8_t length){
             copy[0] = (transfert.mode << 7) + (transfert.commande << 1) + transfert.parite;
             transfert.parite = calculParite(&copy, LENGTH_ESP_OPENCR);
 
-            ESP_LOGI(RECEPTION_TAG, "mode : %d, commande : %d, parite : %d",transfert.mode, transfert.commande, transfert.parite);
+            // ESP_LOGI(RECEPTION_TAG, "mode : %d, commande : %d, parite : %d",transfert.mode, transfert.commande, transfert.parite);
+
+            xSemaphoreTake(mutexBT_UART, portMAX_DELAY);
+            xQueueSend(queueBT_UART, &transfert, portMAX_DELAY);
+            xSemaphoreGive(mutexBT_UART);
+
         }
     }
 }
