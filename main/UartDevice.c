@@ -1,5 +1,5 @@
 /***
- * @author @trudelle200902
+ * @author @MarieClaude1234
  * @file BluetoothDevice.cpp
  * @date 05 avril 2023
 ***/
@@ -25,7 +25,7 @@ void initUART(){
     ESP_ERROR_CHECK(uart_driver_install(UART_PORT, UART_RX_BUFF_SIZE, UART_TX_BUFF_SIZE, 0, NULL, 0));
 }
 
-bool verifParite2(uint8_t* data, uint8_t length){
+bool verifPariteUART(uint8_t* data, uint8_t length){
     int parite = 0;
     for(int i = 0; i < length; i++){
         parite += data[i] & 0b00000001;
@@ -41,7 +41,7 @@ bool verifParite2(uint8_t* data, uint8_t length){
     return parite % 2;
 }
 
-bool calculParite2(uint8_t data[], uint8_t length){
+bool calculPariteUART(uint8_t data[], uint8_t length){
     int total = 0;
     for(int i = 0; i < length; i++){
         total += data[i] & 0b00000001;
@@ -53,7 +53,7 @@ bool calculParite2(uint8_t data[], uint8_t length){
         total += (data[i] & 0b01000000) >> 6;
         total += (data[i] & 0b10000000) >> 7;
     }
-    if(total % 2 == 0)
+    if(total % 2 == 0) // pas d'erreur
         return 0;
     else
         return 1;
@@ -67,10 +67,6 @@ uint16_t calculDistance(uint8_t sequences){
 
 
 void txUartTask(void * arg){
-    // struct something_something* my_struct;
-    // my_struct = (struct something_something*) arg;
-
-
     while (1) {
         struct MessageESP_OPENCR transfert = {0,0,0};
         bool nouvMessage = false;

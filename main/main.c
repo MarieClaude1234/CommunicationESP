@@ -7,7 +7,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "../include/Messages.h"
-// #include "../include/Utilities.h"
 #include "BTDevice.h"
 #include "UartDevice.h"
 

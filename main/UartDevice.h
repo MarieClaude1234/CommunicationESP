@@ -1,6 +1,6 @@
 /***
- * @author @MarieClaude1234
- * @file BluetoothDevice.h
+ * @author @trudelle200902
+ * @file UartDevice.h
  * @date 28 mars 2023
 ***/
 
@@ -46,20 +46,47 @@ extern SemaphoreHandle_t mutexBT_UART;
 extern QueueHandle_t queueBT_UART;
 extern QueueHandle_t queueUART_BT;
 
-// struct concurrency_handle{
-//     QueueHandle_t queueBT_UART;
-//     QueueHandle_t queueUART_BT;
-//     SemaphoreHandle_t mutexUART_BT;
-//     SemaphoreHandle_t mutexBT_UART;
-// };
-
+/**
+ * @brief Initialise les configurations UART
+ * 
+ */
 void initUART();
 
-bool verifParite2(uint8_t* data, uint8_t length);
-bool calculParite2(uint8_t data[], uint8_t length);
+/**
+ * @brief Verifie la parite du message passe en parametres
+ * 
+ * @param data message recu
+ * @param length nombre d'octets du message recu
+ * @return retourne 1 lors d'une erreur de parite
+ */
+bool verifPariteUART(uint8_t* data, uint8_t length);
+/**
+ * @brief Calcule la parite du message passe en parametres
+ * 
+ * @param data message a calculer
+ * @param length nombre d'octets du message recu
+ * @return la valeur a donner au bit de parite
+ */
+bool calculPariteUART(uint8_t data[], uint8_t length);
+/**
+ * @brief Effectue la conversion du nombre de sequences a la distance
+ * 
+ * @param sequences nombre de sequences
+ * @return distance en mm
+ */
 uint16_t calculDistance(uint8_t sequences);
 
+/**
+ * @brief Tache d'envoi de messages UART
+ * 
+ * @param arg structure des valeurs necessaires externes a la fonction
+ */
 void txUartTask(void * arg);
+/**
+ * @brief Tache de reception de messages UART
+ * 
+ * @param arg structure des valeurs necessaires externes a la fonction
+ */
 void rxUartTask(void * arg);
 
 #endif

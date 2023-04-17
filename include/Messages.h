@@ -15,6 +15,7 @@
 #define LENGTH_GUI_ESP 9
 #define CONVERSION_DIST_SEQ 80 // en mm
 #define ADRESSE_MAC 0x807d3ab933e2
+// #define ADRESSE_MAC 0x7821848238a2
 
 struct MessageESP_OPENCR{
     bool mode; //manuel ou automatique

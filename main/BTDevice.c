@@ -1,6 +1,6 @@
 /***
  * @author @MarieClaude1234
- * @file Utilities.h
+ * @file BtDevice.h
  * @date 28 mars 2023
 ***/
 
@@ -42,7 +42,7 @@ void txBtTask(void * arg){
     }
 }
 
-bool verifParite(uint8_t* data, uint8_t length){
+bool verifPariteBT(uint8_t* data, uint8_t length){
     int parite = 0;
     for(int i = 0; i < length; i++){
         parite += data[i] & 0b00000001;
@@ -58,7 +58,7 @@ bool verifParite(uint8_t* data, uint8_t length){
     return parite % 2;
 }
 
-bool calculParite(uint8_t data[], uint8_t length){
+bool calculPariteBT(uint8_t data[], uint8_t length){
     int total = 0;
     for(int i = 0; i < length; i++){
         total += data[i] & 0b00000001;
@@ -146,9 +146,6 @@ void recevoirMessage(uint8_t data[], uint8_t length){
     }
 }
 
-// static const esp_spp_mode_t esp_spp_mode = ESP_SPP_MODE_CB;
-// static const bool esp_spp_enable_l2cap_ertm = true;
-
 static struct timeval time_new, time_old;
 static long data_num = 0;
 
@@ -207,7 +204,6 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
         break;
     case ESP_SPP_DATA_IND_EVT:
 
-        // memcpy(&raw, param->data_ind.data, param->data_ind.len);
         recevoirMessage(param->data_ind.data, param->data_ind.len);
 #if (SPP_SHOW_MODE == SPP_SHOW_DATA)
         /*
@@ -309,14 +305,8 @@ void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
     return;
 }
 
-// void initBT(QueueHandle_t _queueBT_UART, QueueHandle_t _queueUART_BT, SemaphoreHandle_t _mutexBT_UART, SemaphoreHandle_t _mutexUART_BT)
 void initBT()
 {
-    // QueueHandle_t queueBT_UART = _queueBT_UART;
-    // QueueHandle_t queueUART_BT = _queueUART_BT;
-    // SemaphoreHandle_t mutexUART_BT = _mutexUART_BT;
-    // SemaphoreHandle_t mutexBT_UART = _mutexBT_UART;
-
     char bda_str[18] = {0};
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -357,18 +347,6 @@ void initBT()
         ESP_LOGE(SPP_TAG, "%s spp register failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
-
-
-    // esp_spp_cfg_t bt_spp_cfg = BT_SPP_DEFAULT_CONFIG();
-    // esp_spp_cfg_t bt_spp_cfg = {
-    //     .mode = esp_spp_mode,
-    //     .enable_l2cap_ertm = esp_spp_enable_l2cap_ertm,
-    //     .tx_buffer_size = 0, /* Only used for ESP_SPP_MODE_VFS mode */
-    // };
-    // if ((ret = esp_spp_enhanced_init(&bt_spp_cfg)) != ESP_OK) {
-    //     ESP_LOGE(SPP_TAG, "%s spp init failed: %s\n", __func__, esp_err_to_name(ret));
-    //     return;
-    // }
 
     static const esp_spp_mode_t esp_spp_mode = ESP_SPP_MODE_CB;
     if ((ret = esp_spp_init(esp_spp_mode)) != ESP_OK) {
