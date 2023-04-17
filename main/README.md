@@ -7,6 +7,7 @@ Ce fichier contient les déclarations de fonctions pour les fonctions du module 
 
 ## BTDevice.c
 Ce fichier contient les définitions de fonctions pour les fonctions du module Bluetooth.
+Le code du module Bluetooth est tiré de l'exemple SPP_ACCEPTOR de l'ESP-IDF trouvé ici : https://github.com/espressif/esp-idf/tree/master/examples/bluetooth/bluedroid/classic_bt/bt_spp_acceptor. 
 
 ## UARTDevice.h
 Ce fichier contient les déclarations de fonctions pour les fonctions du module UART.
