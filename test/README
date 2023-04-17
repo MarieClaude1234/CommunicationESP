@@ -1,11 +1,4 @@
-
-This directory is intended for PlatformIO Test Runner and project tests.
-
-Unit Testing is a software testing method by which individual units of
-source code, sets of one or more MCU program modules together with associated
-control data, usage procedures, and operating procedures, are tested to
-determine whether they are fit for use. Unit testing finds problems early
-in the development cycle.
-
-More information about PlatformIO Unit Testing:
-- https://docs.platformio.org/en/latest/advanced/unit-testing/index.html
+# Tests
+<p style="text-align: justify;">
+Ce dossier contient le fichier pour le test automatisé de connexion Bluetooth. Le test consiste à établir une connexion Bluetooth avec l'ESP32. Ensuite, 3 messages sont envoyés : 2 messages valides et un contenant une erreur de parité. Finalement, le script rentre dans une boucle qui envoie à répétition un message valide et lorsqu'une déconnexion survient, des tentatives de reconnexion sont effectuées.
+</p>
